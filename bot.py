@@ -1,24 +1,21 @@
 import os
+import datetime
 import logging
 import asyncio
 import sqlite3
 import asqlite
 import twitchio
 from twitchio import eventsub
-from twitchio.ext import commands
-
+from twitchio.ext import commands, routines
+ 
 LOGGER: logging.Logger = logging.getLogger("Bot")
 
+# formatting like this should make each command on a separate line
 help_msg = '''
-thechosenbot (1.0) by sethechosenone
-
-Here's a list of available commands (with more to come!):
-
-!help - display this help message
-!insta - link to sethechosenone on Instagram
-!tiktok - link to sethechosenone on TikTok
-!youtube - like to sethechosenone on YouTube
+thechosenbot (1.0) by sethechosenone_________________________________ Here's a list of available commands (with more to come!):________________________________________ !help - display this help message________________ !insta - link to sethechosenone on Instagram__ !tiktok - link to sethechosenone on TikTok_____ !youtube - link to sethechosenone on YouTube
 '''
+follow_reminder_msg = '''Sup nerds, if you're enjoying the stream, don't forget to follow, so you can be notified everytime sethechosenone goes live!
+Alternatively, if you're REALLY enjoying the stream, leaving a donation would be greatly appreciated! -> https://streamlabs.com/sethechosenone/tip'''
 
 class Bot(commands.Bot):
     def __init__(self, *, token_database) -> None:
@@ -70,8 +67,15 @@ class Bot(commands.Bot):
         async with self.token_database.acquire() as connection:
             await connection.execute(query)
 
+    @routines.routine(delta = datetime.timedelta(minutes = 10))
+    async def follow_reminder(self):
+        LOGGER.info("Running routine: follow_reminder")
+        user = self.create_partialuser(user_id = self.owner_id)
+        await user.send_message(sender = self.bot_id, message = follow_reminder_msg)
+
     async def event_ready(self):
         LOGGER.info("thechosenbot is ready.")
+        self.follow_reminder.start()
 
 class SocialsComponent(commands.Component):
     def __init__(self, bot: Bot):
