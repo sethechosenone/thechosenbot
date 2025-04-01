@@ -5,17 +5,15 @@ import asyncio
 import sqlite3
 import asqlite
 import twitchio
+from components import main, socials
 from twitchio import eventsub
 from twitchio.ext import commands, routines
  
 LOGGER: logging.Logger = logging.getLogger("Bot")
-
-# formatting like this should make each command on a separate line
-help_msg = '''
-thechosenbot (1.0) by sethechosenone_________________________________ Here's a list of available commands (with more to come!):________________________________________ !help - display this help message________________ !insta - link to sethechosenone on Instagram__ !tiktok - link to sethechosenone on TikTok_____ !youtube - link to sethechosenone on YouTube
+follow_reminder_msg = '''
+Sup nerds, if you're enjoying the stream, don't forget to follow, so you can be notified everytime sethechosenone goes live!
+Alternatively, if you're REALLY enjoying the stream, leaving a donation would be greatly appreciated! -> https://streamlabs.com/sethechosenone/tip
 '''
-follow_reminder_msg = '''Sup nerds, if you're enjoying the stream, don't forget to follow, so you can be notified everytime sethechosenone goes live!
-Alternatively, if you're REALLY enjoying the stream, leaving a donation would be greatly appreciated! -> https://streamlabs.com/sethechosenone/tip'''
 
 class Bot(commands.Bot):
     def __init__(self, *, token_database) -> None:
@@ -29,7 +27,8 @@ class Bot(commands.Bot):
         )
 
     async def setup_hook(self) -> None:
-        await self.add_component(SocialsComponent(self))
+        await self.add_component(socials.SocialsComponent(self))
+        await self.add_component(main.MainComponent(self))
         subscription = eventsub.ChatMessageSubscription(
             broadcaster_user_id = os.environ['OWNER_ID'],
             user_id = os.environ['BOT_ID']
@@ -76,26 +75,6 @@ class Bot(commands.Bot):
     async def event_ready(self):
         LOGGER.info("thechosenbot is ready.")
         self.follow_reminder.start()
-
-class SocialsComponent(commands.Component):
-    def __init__(self, bot: Bot):
-        self.bot = bot
-
-    @commands.command(name = 'help')
-    async def help(self, ctx: commands.Context):
-        await ctx.send(help_msg)
-
-    @commands.command(name = 'insta')
-    async def insta(self, ctx: commands.Context):
-        await ctx.send('You can follow sethechosenone on Instagram here: https://www.instagram.com/sethechosenone/')
-
-    @commands.command(name = 'tiktok')
-    async def tiktok(self, ctx: commands.Context):
-        await ctx.send('You can follow sethechosenone on TikTok here: https://www.tiktok.com/@sethechosenone')
-
-    @commands.command(name = 'youtube')
-    async def youtube(self, ctx: commands.Context):
-        await ctx.send('You can subscribe to sethechosenone on YouTube here: https://www.youtube.com/@sethechosenone')
 
 if __name__ == "__main__":
     twitchio.utils.setup_logging(level=logging.INFO)
